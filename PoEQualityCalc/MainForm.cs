@@ -83,7 +83,7 @@ namespace PoEQualityCalc
 
         private void FindSolutions()
         {
-            sumLbl.Text = sum.ToString();
+            addBtn.Text = sum.ToString();
 
             currentSolution = 0;
             solutions.Clear();
@@ -104,14 +104,8 @@ namespace PoEQualityCalc
                     (panel.Controls[i++] as Label).Text = (x + 1).ToString();
         }
 
-        private void inputBox_KeyPress(object sender, KeyPressEventArgs e)
+        private void Add()
         {
-            if (e.KeyChar != (char)Keys.Enter)
-                return;
-
-            e.Handled = true;
-            inputBox.Select(0, inputBox.Text.Length);
-
             int value = Convert.ToInt32(inputBox.Value);
             if (value < 1 || value > 20)
                 return;
@@ -131,6 +125,22 @@ namespace PoEQualityCalc
             FindSolutions();
         }
 
+        private void inputBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar != (char)Keys.Enter)
+                return;
+
+            e.Handled = true;
+            inputBox.Select(0, inputBox.Text.Length);
+
+            Add();
+        }
+
+        private void addBtn_Click(object sender, EventArgs e)
+        {
+            Add();
+        }
+
         private void resetBtn_Click(object sender, EventArgs e)
         {
             panel.Controls.Clear();
@@ -138,7 +148,7 @@ namespace PoEQualityCalc
             Array.Clear(quantity, 0, quantity.Length);
             currentSolution = 0;
             solutions.Clear();
-            sumLbl.Text = "";
+            addBtn.Text = "";
             PresentSolution();
             inputBox.Focus();
             inputBox.Select(0, inputBox.Text.Length);
@@ -217,6 +227,18 @@ namespace PoEQualityCalc
 
             RenumberLabels();
             FindSolutions();
+        }
+
+        private void decBtn_Click(object sender, EventArgs e)
+        {
+            if (inputBox.Value > inputBox.Minimum)
+                inputBox.Value--;
+        }
+
+        private void incBtn_Click(object sender, EventArgs e)
+        {
+            if (inputBox.Value < inputBox.Maximum)
+                inputBox.Value++;
         }
     }
 }
