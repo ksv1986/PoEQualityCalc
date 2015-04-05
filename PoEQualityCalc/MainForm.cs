@@ -8,29 +8,28 @@ namespace PoEQualityCalc
 {
     public partial class MainForm : Form
     {
-        private class Solution
+        private class Solution : IComparable<Solution>
         {
-            public int[] indexes;
+            public int[] quantity;
             public int sum;
-            public Solution(int[] stack, int solutionSum)
+            public Solution(int[] stack, int sum)
             {
-                indexes = stack;
-                sum = solutionSum;
+                quantity = new int[stack.Length];
+                Array.Copy(stack, quantity, stack.Length);
+                this.sum = sum;
+            }
+
+            public int CompareTo(Solution other)
+            {
+                return sum.CompareTo(other.sum);
             }
         };
 
-        int[] values = new int[0];
+        // We have quantity[X-1] items of quality X
+        int[] quantity = new int[20];
+        int sum = 0;
         List<Solution> solutions = new List<Solution>();
         int currentSolution = 0;
-
-        private int len { get { return values.Length;} }
-        private int Sum()
-        {
-            int sum = 0;
-            foreach (int v in values)
-                sum += v;
-            return sum;
-        }
 
         public MainForm()
         {
@@ -42,26 +41,48 @@ namespace PoEQualityCalc
             costLbl.Font = BoldFont;
         }
 
-        private void SubSolution(int sum, int pos, int[] stack, int stackSize)
+        private void print(int x, int s, int[] stack)
+        {
+            Console.Write(x + ": (" + s + ")");
+            for (int i = 0; i < 20; i++)
+                Console.Write(" " + stack[i]);
+            Console.WriteLine();
+        }
+
+        private void VerifySolution(int sum, int[] s)
+        {
+            int check = 0;
+            for (int x = 0; x < 20; x++)
+                check += s[x] * (x + 1);
+            if (check != sum)
+                throw new Exception(check + " != " + sum);
+        }
+
+        private bool SubSolution(int sum, int pos, int[] stack)
         {
             if (sum >= 40) {
-                int[] s = new int[stackSize];
-                Array.Copy(stack, s, stackSize);
-                solutions.Add(new Solution(s, sum));
-                return;
+                solutions.Add(new Solution(stack, sum));
+                return true;
             }
-            if (pos >= len)
-                return;
-            for (int i = pos; i < len; i++)
+
+            if (pos >= 20)
+                return false;
+
+            for (int x = pos; x < 20; x++)
             {
-                stack[stackSize] = i;
-                SubSolution(sum + values[i], i + 1, stack, stackSize + 1);
+                for (int y = stack[x]; y < quantity[x]; y++)
+                {
+                    stack[x]++;
+                    if (SubSolution(sum + (x + 1) * (y + 1), x + 1, stack))
+                        break;
+                }
+                stack[x] = 0;
             }
+            return false;
         }
 
         private void FindSolutions()
         {
-            int sum = Sum();
             sumLbl.Text = sum.ToString();
 
             currentSolution = 0;
@@ -69,22 +90,18 @@ namespace PoEQualityCalc
 
             if (sum >= 40)
             {
-
-                int[] stack = new int[len];
-
-                SubSolution(0, 0, stack, 0);
-
-                int minSum = 99;
-                for (int i = 0; i < solutions.Count; i++)
-                {
-                    if (minSum > solutions[i].sum)
-                    {
-                        minSum = solutions[i].sum;
-                        currentSolution = i;
-                    }
-                }
+                SubSolution(0, 0, new int[20]);
+                solutions.Sort();
             }
             PresentSolution();
+        }
+
+        private void RenumberLabels()
+        {
+            int i = 0;
+            for (int x = 0; x < 20; x++)
+                for (int y = 0; y < quantity[x]; y++)
+                    (panel.Controls[i++] as Label).Text = (x + 1).ToString();
         }
 
         private void inputBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -95,32 +112,30 @@ namespace PoEQualityCalc
             e.Handled = true;
             inputBox.Select(0, inputBox.Text.Length);
 
-            if (inputBox.Value < 1 || inputBox.Value > 20)
+            int value = Convert.ToInt32(inputBox.Value);
+            if (value < 1 || value > 20)
                 return;
 
-            int index = len;
-            Array.Resize(ref values, len + 1);
-            values[index] = (int)inputBox.Value;
-            Array.Sort(values);
+            sum += value;
+            quantity[value - 1]++;
+
             Label nu = new Label();
             nu.AutoSize = false;
             nu.Height = inputBox.Height;
             nu.Width  = inputBox.Width;
             nu.Margin = new Padding(0, 0, 2, 2);
-            nu.Location = new Point(0, panel.Controls.Count * (inputBox.Height + 2));
             nu.BorderStyle = BorderStyle.FixedSingle;
             panel.Controls.Add(nu);
 
-            for (int i = 0; i < len; i++)
-                (panel.Controls[i] as Label).Text = values[i].ToString();
-
+            RenumberLabels();
             FindSolutions();
         }
 
         private void resetBtn_Click(object sender, EventArgs e)
         {
             panel.Controls.Clear();
-            values = new int[0];
+            sum = 0;
+            Array.Clear(quantity, 0, quantity.Length);
             currentSolution = 0;
             solutions.Clear();
             sumLbl.Text = "";
@@ -131,28 +146,40 @@ namespace PoEQualityCalc
 
         private void PresentSolution()
         {
-            foreach (Control c in panel.Controls)
-                c.BackColor = panel.BackColor;
+            costLbl.ForeColor = ForeColor;
 
             if (currentSolution >= solutions.Count)
             {
+                costLbl.BackColor = BackColor;
+                foreach (Control c in panel.Controls)
+                    c.BackColor = BackColor;
+
                 solutionLbl.Text = "0/0";
                 costLbl.Text = "";
                 return;
             }
 
             Solution s = solutions[currentSolution];
-            solutionLbl.Text = (currentSolution + 1).ToString() + "/" + solutions.Count.ToString();
+            solutionLbl.Text = (currentSolution + 1) + "/" + solutions.Count;
             costLbl.Text = s.sum.ToString();
             if (s.sum > 45)
-                costLbl.ForeColor = Color.Red;
+            {
+                costLbl.BackColor = Color.OrangeRed;
+                costLbl.ForeColor = Color.White;
+            }
             else if (s.sum > 40)
-                costLbl.ForeColor = Color.DarkOrange;
+            {
+                costLbl.BackColor = Color.Orange;
+            }
             else
-                costLbl.ForeColor = Color.Green;
+            {
+                costLbl.BackColor = Color.LightGreen;
+            }
 
-            for (int i = 0; i < s.indexes.Length; i++)
-                (panel.Controls[s.indexes[i]] as Label).BackColor = Color.LightGreen;
+            int i = 0;
+            for (int x = 0; x < 20; x++)
+                for (int y = 0; y < quantity[x]; y++)
+                    (panel.Controls[i++] as Label).BackColor = y < s.quantity[x] ? costLbl.BackColor : BackColor;
         }
 
         private void prevBtn_Click(object sender, EventArgs e)
@@ -175,14 +202,20 @@ namespace PoEQualityCalc
         {
             if (currentSolution >= solutions.Count)
                 return;
-            List<int> list = new List<int>(values);
+
             Solution s = solutions[currentSolution];
-            for (int i = s.indexes.Length - 1; i >= 0; i--)
+            int newCount = 0;
+            for (int x = 0; x < 20; x++)
             {
-                list.RemoveAt(s.indexes[i]);
-                panel.Controls.RemoveAt(s.indexes[i]);
+                sum -= (x + 1) * s.quantity[x];
+                quantity[x] -= s.quantity[x];
+                newCount += quantity[x];
             }
-            values = list.ToArray();
+
+            while (panel.Controls.Count > newCount)
+                panel.Controls.RemoveAt(newCount);
+
+            RenumberLabels();
             FindSolutions();
         }
     }
