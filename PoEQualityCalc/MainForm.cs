@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
@@ -26,7 +26,8 @@ namespace PoEQualityCalc
         };
 
         // We have quantity[X-1] items of quality X
-        int[] quantity = new int[20];
+        const int MaxQuality = 19;
+        int[] quantity = new int[MaxQuality];
         int sum = 0;
         List<Solution> solutions = new List<Solution>();
         int currentSolution = 0;
@@ -44,7 +45,7 @@ namespace PoEQualityCalc
         private void print(int x, int s, int[] stack)
         {
             Console.Write(x + ": (" + s + ")");
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < MaxQuality; i++)
                 Console.Write(" " + stack[i]);
             Console.WriteLine();
         }
@@ -52,7 +53,7 @@ namespace PoEQualityCalc
         private void VerifySolution(int sum, int[] s)
         {
             int check = 0;
-            for (int x = 0; x < 20; x++)
+            for (int x = 0; x < MaxQuality; x++)
                 check += s[x] * (x + 1);
             if (check != sum)
                 throw new Exception(check + " != " + sum);
@@ -65,10 +66,10 @@ namespace PoEQualityCalc
                 return true;
             }
 
-            if (pos >= 20)
+            if (pos >= MaxQuality)
                 return false;
 
-            for (int x = pos; x < 20; x++)
+            for (int x = pos; x < MaxQuality; x++)
             {
                 for (int y = stack[x]; y < quantity[x]; y++)
                 {
@@ -90,7 +91,7 @@ namespace PoEQualityCalc
 
             if (sum >= 40)
             {
-                SubSolution(0, 0, new int[20]);
+                SubSolution(0, 0, new int[MaxQuality]);
                 solutions.Sort();
             }
             PresentSolution();
@@ -98,16 +99,20 @@ namespace PoEQualityCalc
 
         private void RenumberLabels()
         {
-            int i = 0;
-            for (int x = 0; x < 20; x++)
+            int index = 0;
+            for (int x = 0; x < MaxQuality; x++)
                 for (int y = 0; y < quantity[x]; y++)
-                    (panel.Controls[i++] as Label).Text = (x + 1).ToString();
+                {
+                    var label = panel.Controls[index++] as Label;
+                    label.Text = (x + 1).ToString();
+                    label.Tag = x;
+                }
         }
 
         private void Add()
         {
             int value = Convert.ToInt32(inputBox.Value);
-            if (value < 1 || value > 20)
+            if (value < 1 || value > MaxQuality)
                 return;
 
             sum += value;
@@ -119,6 +124,7 @@ namespace PoEQualityCalc
             nu.Width  = inputBox.Width;
             nu.Margin = new Padding(0, 0, 2, 2);
             nu.BorderStyle = BorderStyle.FixedSingle;
+            nu.MouseClick += new MouseEventHandler(onLabelMouseClick);
             panel.Controls.Add(nu);
 
             RenumberLabels();
@@ -187,7 +193,7 @@ namespace PoEQualityCalc
             }
 
             int i = 0;
-            for (int x = 0; x < 20; x++)
+            for (int x = 0; x < MaxQuality; x++)
                 for (int y = 0; y < quantity[x]; y++)
                     (panel.Controls[i++] as Label).BackColor = y < s.quantity[x] ? costLbl.BackColor : BackColor;
         }
@@ -215,7 +221,7 @@ namespace PoEQualityCalc
 
             Solution s = solutions[currentSolution];
             int newCount = 0;
-            for (int x = 0; x < 20; x++)
+            for (int x = 0; x < MaxQuality; x++)
             {
                 sum -= (x + 1) * s.quantity[x];
                 quantity[x] -= s.quantity[x];
@@ -239,6 +245,21 @@ namespace PoEQualityCalc
         {
             if (inputBox.Value < inputBox.Maximum)
                 inputBox.Value++;
+        }
+
+        private void onLabelMouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Middle)
+                return;
+
+            var label = sender as Label;
+            var index = Convert.ToInt32(label.Tag);
+            quantity[index]--;
+            sum -= index + 1;
+            panel.Controls.RemoveAt(panel.Controls.Count - 1);
+
+            RenumberLabels();
+            FindSolutions();
         }
     }
 }

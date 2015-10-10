@@ -46,7 +46,7 @@
             // 
             this.inputBox.Location = new System.Drawing.Point(42, 12);
             this.inputBox.Maximum = new decimal(new int[] {
-            20,
+            19,
             0,
             0,
             0});
