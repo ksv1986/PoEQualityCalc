@@ -5,3 +5,5 @@ vendor
 recipe system allows the player to sell items to any town vendor in exchange for a multitude of currency items and equipment.
 
 This program will automatically find the best deal for quality items recipes. Just input the qualities of items of same category you have, and it will display the combination with minimal cost.
+
+This is a free software licensed under the terms of GNU General Public License v.2
