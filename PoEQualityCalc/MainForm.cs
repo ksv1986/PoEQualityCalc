@@ -325,7 +325,7 @@ namespace PoE
 
         private void OnItemLabelMouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button != MouseButtons.Middle)
+            if (e.Button != MouseButtons.Middle && Form.ModifierKeys != Keys.Control)
                 return;
 
             var label = sender as Label;
