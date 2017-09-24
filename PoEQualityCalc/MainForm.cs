@@ -114,13 +114,19 @@ namespace PoE
 
         private void OnInputBoxKeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar != (char)Keys.Enter)
-                return;
+            switch (e.KeyChar)
+            {
+                case (char)Keys.Enter:
+                    e.Handled = true;
+                    inputBox.Select(0, inputBox.Text.Length);
+                    ProcessInput();
+                    break;
+                case (char)Keys.Space:
+                    e.Handled = true;
+                    SellCurrentDeal();
+                    break;
+            }
 
-            e.Handled = true;
-            inputBox.Select(0, inputBox.Text.Length);
-
-            ProcessInput();
         }
 
         private void OnAddButtonClick(object sender, EventArgs e)
@@ -288,7 +294,7 @@ namespace PoE
             ShowDeal();
         }
 
-        private void OnSellButtonClick(object sender, EventArgs e)
+        private void SellCurrentDeal()
         {
             if (selectedDeal >= allDeals.Count)
                 return;
@@ -309,6 +315,11 @@ namespace PoE
             panel.ResumeLayout();
 
             RefreshInterface();
+        }
+
+        private void OnSellButtonClick(object sender, EventArgs e)
+        {
+            SellCurrentDeal();
         }
 
         private void OnDecreaseButtonClick(object sender, EventArgs e)
